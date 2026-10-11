@@ -1,0 +1,30 @@
+{
+  "name": "rootrules",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Law of Root (rules + FAQ) preprocessed for LLM consumption",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch.ts",
+    "build": "node scripts/build.ts",
+    "update": "npm run fetch && npm run build",
+    "start": "node scripts/serve.ts",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/node": "^2.1.1",
+    "@modelcontextprotocol/server": "^2.3.1",
+    "minisearch": "^7.2.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@types/node": "^24.19.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Root Rules",
+  "short_name": "Root Rules",
+  "description": "Rules arbiter for the board game Root",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1b211c",
+  "theme_color": "#1b211c",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

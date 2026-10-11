@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Root Rules</title>
+  <meta name="description" content="Rules arbiter for the board game Root">
+  <meta name="theme-color" content="#f4ecdc" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b211c" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>Root Rules</h1>
+    <select id="model" aria-label="Model"></select>
+    <button id="reset" class="icon-btn" type="button" aria-label="New conversation" title="New conversation">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <main id="log" aria-live="polite">
+    <section id="empty" class="empty">
+      <p class="empty-title">Ask about a rule or a situation at the table.</p>
+      <p class="empty-sub">Answers cite the Law of Root — tap a <span class="cite demo">§4.3.1</span> to read the rule.</p>
+      <div class="examples">
+        <button type="button">Can I play an ambush card when the Vagabond attacks me?</button>
+        <button type="button">Do I lose points when one of my buildings is removed?</button>
+        <button type="button">How does the Eyrie's Turmoil work?</button>
+        <button type="button">Who rules a clearing if the Eyrie and the Marquise are tied?</button>
+      </div>
+    </section>
+  </main>
+
+  <form id="composer" class="composer">
+    <textarea id="input" rows="1" placeholder="Ask a rules question…" enterkeyhint="send" autocomplete="off"></textarea>
+    <button id="send" class="send" type="submit" aria-label="Send">
+      <svg class="i-send" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      <svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+    </button>
+  </form>
+
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <header class="sheet-head">
+        <button id="sheet-back" class="icon-btn" type="button" aria-label="Back" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <span id="sheet-title" class="sheet-title"></span>
+        <button class="icon-btn" type="button" aria-label="Close" data-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div id="sheet-body" class="sheet-body"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
