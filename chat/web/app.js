@@ -5,7 +5,7 @@
 const STORE_KEY = 'rootrules-chat-v1';
 const MODEL_KEY = 'rootrules-chat-model';
 
-/** @type {{role:'user'|'assistant', content:string, trace?:any[], error?:string, streaming?:boolean}[]} */
+/** @type {{role:'user'|'assistant', content:string, trace?:any[], warning?:string, error?:string, streaming?:boolean}[]} */
 let messages = [];
 let controller = null;
 
@@ -197,6 +197,12 @@ function renderMessage(msg) {
     answer.innerHTML = md(parts.answer);
     el.append(answer);
   }
+  if (msg.warning) {
+    const warn = document.createElement('div');
+    warn.className = 'warning';
+    warn.textContent = `⚠ ${msg.warning}`;
+    el.append(warn);
+  }
   if (msg.error) {
     const err = document.createElement('div');
     err.className = 'error';
@@ -316,6 +322,17 @@ function handleEvent(msg, event, data) {
       }
       break;
     }
+    case 'retract': {
+      // The model answered without looking anything up; keep the withdrawn text in the trace only.
+      const { thinking, answer } = splitThinking(msg.content);
+      if (thinking) msg.trace.push({ kind: 'thinking', text: thinking });
+      msg.trace.push({ kind: 'note', text: answer ? `${data.reason}\n\nWithdrawn: ${answer}` : data.reason });
+      msg.content = '';
+      break;
+    }
+    case 'warning':
+      msg.warning = data.message;
+      break;
     case 'error':
       msg.error = data.message;
       break;

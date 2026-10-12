@@ -161,6 +161,14 @@ main {
 .cite.demo { cursor: default; }
 
 .error { color: var(--danger); font-size: 14px; margin-top: 6px; }
+.warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--danger);
+  font-size: 14px;
+}
 
 .trace {
   margin: 0 0 8px;
@@ -198,7 +206,7 @@ main {
   background: var(--surface-2);
   font-size: 13px;
 }
-.note { color: var(--muted); font-style: italic; }
+.note { color: var(--muted); font-style: italic; white-space: pre-wrap; }
 
 .spinner {
   width: 14px;

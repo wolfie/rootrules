@@ -190,6 +190,58 @@ func TestAgentForcesAnswerAtStepLimit(t *testing.T) {
 	}
 }
 
+func eventNames(events []event) string {
+	var names []string
+	for _, e := range events {
+		names = append(names, e.Name)
+	}
+	return strings.Join(names, " ")
+}
+
+func TestAgentRetractsAnswerWithoutResearch(t *testing.T) {
+	llm := &fakeLLM{replies: [][]string{
+		contentChunks("From memory: yes."),
+		toolCallChunks("a", "search_rules", `{"query":"ambush"}`),
+		contentChunks("**Ruling:** Yes, see §4.3.1."),
+	}}
+	events := chat(t, newTestServer(t, llm, 8), "Can I ambush?")
+	want := "step delta retract step tool_call tool_result step delta done"
+	if got := eventNames(events); got != want {
+		t.Fatalf("events = %q, want %q", got, want)
+	}
+	// The withdrawn answer isn't sent back to the model; a system nudge is.
+	second := llm.requests[1].Messages
+	if last := second[len(second)-1]; last.Role != "system" || !strings.Contains(last.Content, "without consulting") {
+		t.Errorf("second request tail = %+v", last)
+	}
+}
+
+func TestAgentAcceptsSecondAnswerWithoutResearch(t *testing.T) {
+	llm := &fakeLLM{replies: [][]string{
+		contentChunks("I only arbitrate Root rules."),
+		contentChunks("I only arbitrate Root rules."),
+	}}
+	events := chat(t, newTestServer(t, llm, 8), "What's the weather?")
+	if got := eventNames(events); got != "step delta retract step delta done" {
+		t.Fatalf("events = %q", got)
+	}
+}
+
+func TestAgentWarnsAboutUnretrievedCitations(t *testing.T) {
+	llm := &fakeLLM{replies: [][]string{
+		toolCallChunks("a", "search_rules", `{"query":"ambush"}`),
+		contentChunks("**Ruling:** Yes, per §4.3.1 and §7.7.7."),
+	}}
+	events := chat(t, newTestServer(t, llm, 8), "Can I ambush?")
+	if got := eventNames(events); !strings.HasSuffix(got, "warning done") {
+		t.Fatalf("events = %q", got)
+	}
+	warning := events[len(events)-2].Data
+	if u := warning["unverified"].([]any); len(u) != 1 || u[0] != "§7.7.7" {
+		t.Errorf("unverified = %v", u)
+	}
+}
+
 func TestAgentReportsBadToolArguments(t *testing.T) {
 	llm := &fakeLLM{replies: [][]string{
 		toolCallChunks("a", "search_rules", `{"query": oops}`),

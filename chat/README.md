@@ -19,6 +19,14 @@ LM Studio doesn't have to be running all the time. The UI checks `GET /api/healt
 and as soon as you come back to it. A banner says when LM Studio or the rules server isn't answering and
 disappears once it's back. The model list fills in when LM Studio comes up.
 
+Answers are kept to what the rules actually say. A wrong ruling is worse than none:
+- The system prompt allows only text the tools returned as a source, and asks for "No ruling found" rather than a guess.
+- An answer given before any lookup is withdrawn, and the model is sent back to research. LM Studio ignores
+  `tool_choice: "required"`, so this is enforced in the loop.
+- When the research budget runs out, the model may only answer from what it found.
+- Every §id and FAQ id the answer cites is checked against the lookup results. If one never came back from a lookup,
+  the answer gets a visible warning.
+
 In the UI you can watch the lookups happen. Citations like §4.3.1 or FAQ-4 in the answer are tappable and open
 the actual rule text, so you can check the model against the Law.
 
