@@ -39,6 +39,7 @@ func fakeRules(t *testing.T, token string) *httptest.Server {
 		}
 		handler.ServeHTTP(w, r)
 	}))
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {})
 	mux.HandleFunc("/api/rules", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"rules": []any{map[string]string{"id": r.URL.Query().Get("ids")}}})
 	})

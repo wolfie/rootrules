@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 )
 
 //go:embed web
@@ -28,6 +29,7 @@ func (s *Server) Handler() http.Handler {
 	web, _ := fs.Sub(webFiles, "web")
 	mux.Handle("GET /", http.FileServerFS(web))
 	mux.HandleFunc("GET /api/models", s.models)
+	mux.HandleFunc("GET /api/health", s.health)
 	mux.HandleFunc("POST /api/chat", s.chat)
 	mux.HandleFunc("GET /api/rule", func(w http.ResponseWriter, r *http.Request) {
 		s.Agent.Rules.Proxy(w, r, "/api/rules", url.Values{"ids": {r.URL.Query().Get("ids")}})
@@ -49,6 +51,43 @@ func (s *Server) models(w http.ResponseWriter, r *http.Request) {
 		def = ids[0]
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"models": ids, "default": def})
+}
+
+// healthTimeout bounds each check, so a hung backend shows as down instead of stalling the UI.
+const healthTimeout = 3 * time.Second
+
+type serviceHealth struct {
+	OK    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+}
+
+// health checks LM Studio and the rules server concurrently. It always answers 200: the UI
+// stays usable and shows which backend is down.
+func (s *Server) health(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), healthTimeout)
+	defer cancel()
+	var llm, rules serviceHealth
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		ids, err := s.Agent.LLM.Models(ctx)
+		switch {
+		case err != nil:
+			llm.Error = err.Error()
+		case len(ids) == 0:
+			llm.Error = "no models available, load one in LM Studio"
+		default:
+			llm.OK = true
+		}
+	})
+	wg.Go(func() {
+		if err := s.Agent.Rules.Ping(ctx); err != nil {
+			rules.Error = err.Error()
+		} else {
+			rules.OK = true
+		}
+	})
+	wg.Wait()
+	writeJSON(w, http.StatusOK, map[string]serviceHealth{"llm": llm, "rules": rules})
 }
 
 type chatRequestBody struct {

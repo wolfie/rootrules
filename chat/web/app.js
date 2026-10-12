@@ -279,6 +279,7 @@ async function send(text) {
     if (e.name !== 'AbortError') msg.error = e.message || String(e);
     else if (!msg.content) msg.error = 'Stopped.';
   } finally {
+    if (msg.error && msg.error !== 'Stopped.') checkHealth();
     msg.streaming = false;
     controller = null;
     setBusy(false);
@@ -485,27 +486,64 @@ modelSelect.addEventListener('change', () => {
 });
 
 async function loadModels() {
-  const banner = $('banner');
+  const res = await fetch('api/models');
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  let saved = null;
   try {
-    const res = await fetch('api/models');
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || res.statusText);
-    let saved = null;
-    try {
-      saved = localStorage.getItem(MODEL_KEY);
-    } catch {
-      /* ignore */
-    }
-    modelSelect.innerHTML = data.models.map((m) => `<option>${esc(m)}</option>`).join('');
-    modelSelect.value = data.models.includes(saved) ? saved : data.default;
-    banner.hidden = data.models.length > 0;
-    banner.textContent = 'No models available — load one in LM Studio.';
-  } catch (e) {
-    banner.hidden = false;
-    banner.textContent = `Model server unavailable: ${e.message || e}`;
+    saved = localStorage.getItem(MODEL_KEY);
+  } catch {
+    /* ignore */
   }
+  modelSelect.innerHTML = data.models.map((m) => `<option>${esc(m)}</option>`).join('');
+  modelSelect.value = data.models.includes(saved) ? saved : data.default;
 }
+
+// ---------- health ----------
+
+// LM Studio and the rules server may be off; poll so the banner appears and clears on its own.
+const HEALTH_INTERVAL_MS = 15_000;
+let healthTimer = null;
+
+function showProblems(problems) {
+  const banner = $('banner');
+  banner.hidden = problems.length === 0;
+  banner.replaceChildren(
+    ...problems.map(([text, detail]) => {
+      const p = document.createElement('p');
+      p.textContent = text;
+      if (detail) p.title = detail;
+      return p;
+    }),
+  );
+}
+
+async function checkHealth() {
+  clearTimeout(healthTimer);
+  const problems = [];
+  try {
+    const res = await fetch('api/health');
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const { llm, rules } = await res.json();
+    if (!llm.ok) problems.push(["LM Studio isn't answering, so questions can't be answered right now.", llm.error]);
+    if (!rules.ok) problems.push(["The rules server isn't answering, so questions can't be answered right now.", rules.error]);
+    // Fill the model list once LM Studio is reachable (it may have been off at page load).
+    if (llm.ok && !modelSelect.options.length) {
+      await loadModels().catch((e) => problems.push(["Couldn't load the model list.", e.message || String(e)]));
+    }
+  } catch (e) {
+    problems.push(["The chat server isn't answering. Check your connection.", e.message || String(e)]);
+  }
+  showProblems(problems);
+  if (document.visibilityState === 'visible') healthTimer = setTimeout(checkHealth, HEALTH_INTERVAL_MS);
+}
+
+// Check right away when the app comes back to the foreground; don't poll while hidden.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkHealth();
+  else clearTimeout(healthTimer);
+});
 
 load();
 renderAll();
-loadModels();
+checkHealth();

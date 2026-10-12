@@ -142,3 +142,20 @@ func (r *Rules) Proxy(w http.ResponseWriter, req *http.Request, path string, que
 	w.WriteHeader(res.StatusCode)
 	io.Copy(w, res.Body)
 }
+
+// Ping checks that the rules server is up via its unauthenticated /healthz endpoint.
+func (r *Rules) Ping(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.RESTBase()+"/healthz", nil)
+	if err != nil {
+		return err
+	}
+	res, err := r.client().Do(req)
+	if err != nil {
+		return fmt.Errorf("cannot reach the rules server at %s: %w", r.RESTBase(), err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("rules server: %s", res.Status)
+	}
+	return nil
+}

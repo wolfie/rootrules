@@ -15,6 +15,10 @@ The backend runs the tool loop itself:
 3. It runs the tool calls the model makes, until the model answers.
 4. It streams everything to the browser.
 
+LM Studio doesn't have to be running all the time. The UI checks `GET /api/health` every 15 seconds while it's open,
+and as soon as you come back to it. A banner says when LM Studio or the rules server isn't answering and
+disappears once it's back. The model list fills in when LM Studio comes up.
+
 In the UI you can watch the lookups happen. Citations like §4.3.1 or FAQ-4 in the answer are tappable and open
 the actual rule text, so you can check the model against the Law.
 
@@ -56,8 +60,13 @@ certificate is issued.
 On the phone, open the URL, then add it to the home screen: Share → Add to Home Screen on iOS, ⋮ → Install app
 on Android. It then opens like an app.
 
-The app has no login of its own: it's only reachable from your tailnet (and from localhost). Keep `-listen` on
+By default the app has no login: it's only reachable from your tailnet (and from localhost). Keep `-listen` on
 127.0.0.1 unless you want everyone on your LAN to have access to your model.
+
+To require a password anyway, for example on a shared tailnet or a LAN listener, set `CHAT_AUTH_USER` and
+`CHAT_AUTH_PASSWORD` (or `-auth-user`/`-auth-password`). The browser then asks for them once and remembers them.
+Basic auth sends the password with every request, so use it over HTTPS or the tailnet (which is encrypted), not
+plain HTTP on a LAN you don't trust. The web app manifest and icon stay public so "Add to Home Screen" works.
 
 ## Options
 
@@ -73,6 +82,8 @@ The app has no login of its own: it's only reachable from your tailnet (and from
 | `-ts-dir`         | `TS_DIR`            | `~/.config/rootrules-chat/tsnet`                                              |
 | `-ts-https`       | `TS_HTTPS`          | `true`                                                                        |
 | `-max-steps`      | `CHAT_MAX_STEPS`    | `8` model calls per answer, the last one without tools so it must answer      |
+| `-auth-user`      | `CHAT_AUTH_USER`    | none (no login); set together with `-auth-password` to require basic auth     |
+| `-auth-password`  | `CHAT_AUTH_PASSWORD`| none                                                                          |
 | `-env-file`       |                     | `.env`; a missing default file is ignored, a missing explicit one is an error |
 
 ### WSL2

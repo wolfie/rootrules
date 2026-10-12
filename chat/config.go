@@ -22,6 +22,8 @@ var envVars = map[string]string{
 	"ts-dir":         "TS_DIR",
 	"ts-https":       "TS_HTTPS",
 	"max-steps":      "CHAT_MAX_STEPS",
+	"auth-user":      "CHAT_AUTH_USER",
+	"auth-password":  "CHAT_AUTH_PASSWORD",
 }
 
 const defaultEnvFile = ".env"

@@ -97,6 +97,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   color: var(--danger);
   font-size: 14px;
 }
+.banner p { margin: 0; }
+.banner p + p { margin-top: 4px; }
 
 main {
   flex: 1;

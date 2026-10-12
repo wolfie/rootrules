@@ -32,9 +32,14 @@ func main() {
 		tsDir      = flag.String("ts-dir", filepath.Join(configDir, "rootrules-chat", "tsnet"), "tailscale state directory")
 		tsHTTPS    = flag.Bool("ts-https", true, "serve HTTPS on the tailnet (needs MagicDNS + HTTPS certificates enabled)")
 		maxSteps   = flag.Int("max-steps", 8, "maximum model calls per answer")
+		authUser   = flag.String("auth-user", "", "require HTTP basic auth with this user name (with -auth-password)")
+		authPass   = flag.String("auth-password", "", "password for -auth-user")
 	)
 	if err := parseConfig(flag.CommandLine, os.Args[1:]); err != nil {
 		log.Fatal(err)
+	}
+	if (*authUser == "") != (*authPass == "") {
+		log.Fatal("basic auth needs both -auth-user and -auth-password")
 	}
 
 	srv := &Server{
@@ -45,7 +50,12 @@ func main() {
 		},
 		DefaultModel: *model,
 	}
-	handler := logRequests(srv.Handler())
+	handler := srv.Handler()
+	if *authUser != "" {
+		handler = basicAuth(*authUser, *authPass, handler)
+		log.Printf("basic auth enabled for user %q", *authUser)
+	}
+	handler = logRequests(handler)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -125,7 +135,8 @@ func main() {
 
 func logRequests(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") {
+		// The UI polls /api/health; logging it would drown out everything else.
+		if strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/api/health" {
 			log.Printf("%s %s", r.Method, r.URL.Path)
 		}
 		h.ServeHTTP(w, r)
